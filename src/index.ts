@@ -53,10 +53,22 @@ const HOSTS: Record<string, string> = {
   taiko: 'https://blockscoutapi.mainnet.taiko.xyz',
 };
 
+// LLMs (and the curated examples) naturally say "ethereum"/"matic"/"arb", not
+// the short host-slug. Map common full/alt names onto the canonical slug so a
+// natural chain name resolves instead of erroring "Unsupported chain".
+const CHAIN_ALIASES: Record<string, string> = {
+  ethereum: 'eth', mainnet: 'eth', 'ethereum-mainnet': 'eth',
+  matic: 'polygon', 'polygon-pos': 'polygon',
+  arb: 'arbitrum', 'arbitrum-one': 'arbitrum',
+  op: 'optimism', 'op-mainnet': 'optimism',
+  bsc: 'bnb', binance: 'bnb', 'bnb-chain': 'bnb',
+  xdai: 'gnosis', ftm: 'fantom', zksync: 'zksync-era',
+};
+
 const tools: McpToolExport['tools'] = [
   {
     name: 'get_address',
-    description: 'Address summary — balance, tx counts, token-holding stats.',
+    description: '"What\'s the balance of [wallet]" / "Ethereum / Polygon / Arbitrum / Base wallet info" / "address summary for [0x...]" / "what tokens does [wallet] hold" — on-chain address summary across 20+ EVM chains (Ethereum, Optimism, Polygon, Arbitrum, Base, BNB, Gnosis, Celo, zkSync, Scroll, Linea, Blast, …). Returns balance, transaction count, token-holding stats. Pass chain slug + 0x address.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -68,7 +80,7 @@ const tools: McpToolExport['tools'] = [
   },
   {
     name: 'get_address_txns',
-    description: 'Recent transactions for an address.',
+    description: '"Recent transactions of [wallet]" / "tx history for [0x...]" / "what has [address] done lately" — recent transactions for an EVM address. Pass chain + 0x address; optionally filter by direction (to/from). Use for wallet-activity audit, fund-flow tracing.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -82,7 +94,7 @@ const tools: McpToolExport['tools'] = [
   },
   {
     name: 'get_address_token_transfers',
-    description: 'ERC-20/721/1155 transfers to/from an address.',
+    description: '"Token transfers / NFT activity for [wallet]" / "ERC-20 / ERC-721 / ERC-1155 transfers in/out of [0x...]" / "what tokens did [address] send or receive" — token transfer log for an EVM address. Use for tracing NFT activity, stablecoin flows, airdrops, or specific-token movement (filter via `token` arg).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -96,7 +108,7 @@ const tools: McpToolExport['tools'] = [
   },
   {
     name: 'get_transaction',
-    description: 'Full transaction detail.',
+    description: '"Look up transaction [0xhash]" / "what happened in tx [hash]" / "decode tx [X]" — full transaction detail (from, to, value, method, status, gas, decoded calldata). Pass chain + tx_hash. Use for forensic tx analysis, MEV inspection, contract-call breakdown.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -108,7 +120,7 @@ const tools: McpToolExport['tools'] = [
   },
   {
     name: 'get_token',
-    description: 'Token contract metadata.',
+    description: '"Token info for [contract]" / "what is contract [0x...]" / "ERC-20 / NFT metadata for [token]" — token contract metadata: name, symbol, decimals, total supply, holder count, contract type. Use for on-chain token characterization.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -120,7 +132,7 @@ const tools: McpToolExport['tools'] = [
   },
   {
     name: 'get_block',
-    description: 'Block detail by number or hash.',
+    description: '"Block [N] details" / "what was in block [hash]" / "miner / proposer of block [X]" — block detail by number or hash. Returns timestamp, gas used, transaction count, miner / validator, parent / next blocks. Use for chain forensics, block-time analysis.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -132,7 +144,7 @@ const tools: McpToolExport['tools'] = [
   },
   {
     name: 'search',
-    description: 'Universal search across addresses, txns, blocks, tokens.',
+    description: '"Search [chain] for [query]" / "is [string] a token / contract / address on [chain]" — universal block-explorer search across addresses, transactions, blocks, tokens, and ENS-style names on a specific EVM chain. Use when you don\'t know yet whether the input is an address / hash / token symbol.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -144,7 +156,7 @@ const tools: McpToolExport['tools'] = [
   },
   {
     name: 'list_chains',
-    description: 'List supported chain slugs and hosts.',
+    description: 'List all EVM chain slugs and Blockscout host URLs supported by this pack (20+ chains: eth, polygon, arbitrum, base, optimism, bnb, gnosis, zksync-era, etc.). Use to discover valid chain values for other tools.',
     inputSchema: { type: 'object', properties: {} },
   },
 ];
@@ -153,10 +165,11 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
   if (name === 'list_chains') {
     return { chains: Object.entries(HOSTS).map(([slug, host]) => ({ slug, host })) };
   }
-  const chain = reqStr(args, 'chain', '"eth"').toLowerCase();
+  const raw = reqStr(args, 'chain', '"eth"').toLowerCase();
+  const chain = CHAIN_ALIASES[raw] ?? raw;
   const host = HOSTS[chain];
   if (!host) {
-    throw new Error(`Unsupported chain "${chain}". Run list_chains for supported options.`);
+    throw new Error(`Unsupported chain "${raw}". Run list_chains for supported options.`);
   }
   const base = `${host}/api/v2`;
   switch (name) {
