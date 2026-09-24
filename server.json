@@ -3,7 +3,7 @@
   "name": "io.github.pipeworx-io/blockscout",
   "title": "Blockscout",
   "description": "Blockscout MCP — multi-chain block-explorer aggregate",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "websiteUrl": "https://pipeworx.io/packs/blockscout",
   "repository": {
     "url": "https://github.com/pipeworx-io/mcp-blockscout",
