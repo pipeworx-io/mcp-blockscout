@@ -1,6 +1,6 @@
 {
   "name": "@pipeworx/mcp-blockscout",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Blockscout MCP — multi-chain block-explorer aggregate",
   "type": "module",
   "main": "lib/index.js",
@@ -27,7 +27,7 @@
     "mode": "gateway",
     "slug": "blockscout",
     "gatewaySlug": "blockscout",
-    "sourceHash": "v1-e6c5bfaeec8670b28f64ff159394d42bc3aa5539aeecb4e88d9897e59d6cc8eb",
-    "sourceCommit": "4277282d72f9bf55e548b3799aaf737baf22152f"
+    "sourceHash": "v1-3357d66d9c8ff213ac493cae5bf6c304ba05033d05b2611841bd569488566e0d",
+    "sourceCommit": "5cb09714e895571153f3d9663c36ff0f140cadd6"
   }
 }
